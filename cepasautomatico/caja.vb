@@ -30,45 +30,49 @@
     Sub New()
 
     End Sub
-
     Public Sub New(orden As Mercaderia, linea As Integer, Optional fechaprod As Date = Nothing)
         Try
             Dim i As Integer
+            Dim tuplaResultado As Tuple(Of Integer, DateTime)
+
             For i = 0 To 10
-                _numero = Repositorio.obtenernumplmax
+                tuplaResultado = Repositorio.obtenernumplmax()
+                _numero = tuplaResultado.Item1
                 If _numero >= 0 Then
                     Exit For
-
                 End If
             Next
 
-
-            '_numero = Repositorio.obtenernumplmax + 1
             _mercaderia = orden.Mercaderia
             _descripcion = orden.Descripcion
-            '_codigo = orden.Codigo
             _icantfajas = orden.ICantFajas
             _presentacion = orden.Presentacion
             _etiqueta = orden.Etiqueta
             _procesado = False
-            _horayfecha = Date.Now
+
+            ' Usar la fecha/hora del servidor en lugar de la fecha local
+            _horayfecha = tuplaResultado.Item2
             _linea = linea + 1
 
-            '_codbar()
+            ' Extraer solo números del código
+            _codigo = ""
             For Each a As Char In orden.Codigo
                 If Asc(a) <= 57 Then
                     _codigo += a
                 End If
             Next
 
+            ' Guardar el código de barras original en descripcion2
+            _descripcion2 = orden.Codigo
+
             If _icantfajas <= 1 Or _icantfajas = 4 Then
-                _codbar = "X" + Date.Now.Day.ToString.PadLeft(2, "0") + Date.Now.Month.ToString.PadLeft(2, "0") + gsParam.LetraCodBar + Date.Now.Year.ToString.Substring(2, 2) + _codigo.PadLeft(5, "0") + _numero.ToString.PadLeft(5, "0")
+                ' Añadir terminación 60001 al código de barras
+                _codbar = "X" + _horayfecha.Day.ToString.PadLeft(2, "0") + _horayfecha.Month.ToString.PadLeft(2, "0") + gsParam.LetraCodBar + _horayfecha.Year.ToString.Substring(2, 2) + _codigo.PadLeft(5, "0") + _numero.ToString.PadLeft(5, "0") + "60001"
             Else
-                _codbar = "F" + Date.Now.Day.ToString.PadLeft(2, "0") + Date.Now.Month.ToString.PadLeft(2, "0") + gsParam.LetraCodBar + Date.Now.Year.ToString.Substring(2, 2) + _codigo.PadLeft(5, "0") + _numero.ToString.PadLeft(5, "0")
+                _codbar = "F" + _horayfecha.Day.ToString.PadLeft(2, "0") + _horayfecha.Month.ToString.PadLeft(2, "0") + gsParam.LetraCodBar + _horayfecha.Year.ToString.Substring(2, 2) + _codigo.PadLeft(5, "0") + _numero.ToString.PadLeft(5, "0") + "60001"
             End If
 
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            'modificacion del constructor
+            ' Configurar fechas y otros campos
             If fechaprod = Nothing Then
                 _fechaproduccion = orden.FechaProduccion
                 _fechavencimiento = ((Convert.ToDateTime(orden.FechaProduccion)).AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Day.ToString.PadLeft(2, "0") + "-" + ((Convert.ToDateTime(orden.FechaProduccion)).AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Month.ToString.PadLeft(2, "0") + "-" + ((Convert.ToDateTime(orden.FechaProduccion)).AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Year.ToString.PadLeft(4, "0")
@@ -78,19 +82,17 @@
                 _fechavencimiento = (fechaprod.AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Day.ToString.PadLeft(2, "0") + "-" + (fechaprod.AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Month.ToString.PadLeft(2, "0") + "-" + (fechaprod.AddMonths(Convert.ToInt32(orden.FechaVencimiento))).Year.ToString.PadLeft(4, "0")
                 _orden = fechaprod.Year.ToString.PadLeft(4, "0") + fechaprod.Month.ToString.PadLeft(2, "0") + fechaprod.Day.ToString.PadLeft(2, "0")
             End If
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
             _codigo = orden.Codigo
-            _descripcion2 = orden.Descripcion2
             _descripcion3 = orden.Descripcion3
             _descripcion4 = orden.Descripcion4
             _descripcion5 = orden.Descripcion5
         Catch ex As Exception
             Logs.nuevo("Error creando caja" + ex.Message)
             MsgBox("Error creando caja" + ex.Message)
-
         End Try
     End Sub
+
 #End Region
 
 

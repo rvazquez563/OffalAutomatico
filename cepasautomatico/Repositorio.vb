@@ -352,12 +352,13 @@ Public Class Repositorio
         End Using
         Return resultado
     End Function
-    Public Shared Function obtenernumplmax() As Integer
-        Dim resultado As Integer
+    Public Shared Function obtenernumplmax() As Tuple(Of Integer, DateTime)
+        Dim resultado As Integer = 0
+        Dim fechaHoraServidor As DateTime = DateTime.Now ' Valor predeterminado
+
         '1) Armado del Connection String
         Dim connString As String = gsParam.ConnSQL
         '2) Creacion del objeto SqlConnection
-        'using utilizado de esta manera, permite liberar los recursos utilizados
         Using conn As New SqlConnection(connString)
             '3) Creacion del QueryString
             Dim queryString As String = "ObtenerCajaMaxima1"
@@ -365,35 +366,31 @@ Public Class Repositorio
             Try
                 Using cmd As New SqlCommand(queryString, conn)
                     cmd.CommandType = CommandType.StoredProcedure
-                    ''cmd.Parameters.AddWithValue("@date", Date.Today)
-
-
                     conn.Open()
-                        Dim reader As SqlDataReader = cmd.ExecuteReader()
+                    Dim reader As SqlDataReader = cmd.ExecuteReader()
                     If reader.HasRows = True Then
-
                         reader.Read()
                         Try
                             resultado = reader.GetInt32(0)
+                            ' Obtenemos la fecha y hora del servidor
+                            fechaHoraServidor = reader.GetDateTime(1)
                         Catch ex As Exception
-                            Logs.nuevo("Error buscando max pl  " + ex.Message)
+                            Logs.nuevo("Error buscando max pl " + ex.Message)
                             resultado = -1
                         End Try
                     Else
                         resultado = 0
-
                     End If
                     reader.Close()
-                        conn.Close()
-
-
+                    conn.Close()
                 End Using
             Catch ex As Exception
-                Logs.nuevo("Error buscando max pl  " + ex.Message)
+                Logs.nuevo("Error buscando max pl " + ex.Message)
                 resultado = -1
             End Try
         End Using
-        Return resultado
+        ' Devolvemos tanto el número como la fecha/hora del servidor
+        Return New Tuple(Of Integer, DateTime)(resultado, fechaHoraServidor)
     End Function
     Shared Function Actulizarpedido() As Boolean
         Dim resultado As Boolean
